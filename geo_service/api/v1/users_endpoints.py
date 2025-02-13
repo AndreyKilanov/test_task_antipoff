@@ -1,6 +1,8 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -14,7 +16,9 @@ from schemas.users_schemas import UserRegister, Token, UserLogin, UserProfile, C
 
 router = APIRouter(prefix='/users')
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 @router.post("/register", response_model=dict)
 async def register_user(user: UserRegister, db: AsyncSession = Depends(get_async_session)):
@@ -24,7 +28,8 @@ async def register_user(user: UserRegister, db: AsyncSession = Depends(get_async
     existing_user = await db.execute(User.__table__.select().where(User.username == user.username))
 
     if existing_user.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Username already exists")
 
     hashed_password = hash_password(user.password)
     new_user = User(
@@ -44,12 +49,31 @@ async def register_user(user: UserRegister, db: AsyncSession = Depends(get_async
 
 
 @router.post("/login", response_model=Token)
-async def login_user(user: UserLogin, db: AsyncSession = Depends(get_async_session)):
+async def login_user(
+        user: UserLogin,
+        db: AsyncSession = Depends(get_async_session)
+):
     """
     Authorization user.
     """
     logger.info(f"Login user: {user}")
     access_token = await validate_user(user, db)
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/login-swagger", include_in_schema=False)
+async def login_user(
+        user: Annotated[OAuth2PasswordRequestForm, Depends()],
+        db: AsyncSession = Depends(get_async_session)
+):
+    """
+    Authorization user in swagger.
+    """
+    logger.info(f"Login user: {user}")
+    access_token = await validate_user(
+        UserLogin(username=user.username, password=user.password),
+        db
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -60,21 +84,25 @@ async def user_profile(user: User = Depends(get_current_user)):
     """
     return {
         "username": user.username,
-        "role": user.role
+        "role": user.role.name,
+        "created_at": user.created_at.isoformat()
     }
 
 
 @router.post("/change_password", response_model=dict)
 async def change_password(
-    data: ChangePassword,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_async_session),
+        data: ChangePassword,
+        user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_async_session),
 ):
     """
     Change user password.
     """
     if not verify_password(data.old_password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect old password"
+        )
 
     user.hashed_password = hash_password(data.new_password)
     await db.commit()

@@ -14,7 +14,7 @@ from core.config import settings
 from models import User, Role
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/login", scheme_name="Bearer")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/login-swagger", scheme_name="Bearer")
 
 
 async def get_current_user(

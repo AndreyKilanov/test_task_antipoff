@@ -7,7 +7,7 @@ from auth.hash_pass import verify_password
 from auth.jwt import create_access_token
 from auth.roles import is_admin
 from core import get_async_session
-from models import User, Role
+from models import User
 from schemas.users_schemas import UserLogin
 
 

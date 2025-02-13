@@ -18,7 +18,8 @@ class Token(BaseModel):
 
 class UserProfile(BaseModel):
     username: str
-    roles: str
+    role: str
+    created_at: str
 
 
 class ChangePassword(BaseModel):
