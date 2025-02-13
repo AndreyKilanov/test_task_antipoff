@@ -1,0 +1,54 @@
+version: '3.9'
+
+networks:
+  geo:
+
+volumes:
+  pg_backend_data_volume:
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: always
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pg_backend_data_volume:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - geo
+
+#  geo_service:
+#    build: ./geo_service
+#    volumes:
+#      - ./geo_service:/app
+#    restart: always
+#    ports:
+#      - "${GEO_SERVICE_PORT}:${GEO_SERVICE_PORT}"
+#    env_file:
+#      - .env
+#    depends_on:
+#      - postgres
+#    networks:
+#      - geo
+
+  mock_server:
+    build:
+      context: ./mock_server
+    container_name: ${MOCK_SERVER_HOST}
+    environment:
+      - MOCK_SERVER_PORT=${MOCK_SERVER_PORT}
+      - MOCK_SERVER_HOST=${MOCK_SERVER_HOST}
+    restart: always
+    ports:
+      - "${MOCK_SERVER_PORT}:${MOCK_SERVER_PORT}"
+    depends_on:
+      - postgres
+    networks:
+      - geo
