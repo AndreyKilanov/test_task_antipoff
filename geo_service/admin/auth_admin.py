@@ -15,7 +15,7 @@ class AdminAuth(AuthenticationBackend):
         user = UserLogin(username=username, password=password)
 
         async with db_manager.session() as session:
-            token = await validate_user(user, session, is_admin=True)
+            token = await validate_user(user, session, check_admin=True)
 
         request.session.update({"token": token})
 
