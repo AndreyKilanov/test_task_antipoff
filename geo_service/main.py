@@ -1,10 +1,8 @@
-#  77:08:0004010:1234 test cadastr num
 import contextlib
 from typing import AsyncIterator
 
 from fastapi import FastAPI
 from sqladmin import Admin
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.cors import CORSMiddleware
 
 import core
@@ -13,7 +11,6 @@ from admin.auth_admin import authentication_backend
 from api.routers import main_router
 from auth.roles import create_roles
 from auth.users import create_admin_user
-from core import db_manager, get_async_session
 from core.config import settings
 
 
@@ -40,10 +37,6 @@ app.add_middleware(
 )
 
 app.include_router(main_router)
-
-async def get_admin_session() -> AsyncSession:
-    async with db_manager.session() as session:
-        return session
 
 admin = Admin(
     app,
