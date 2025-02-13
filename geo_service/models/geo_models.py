@@ -18,9 +18,3 @@ class Geo(Base):
         default=datetime.datetime.now(datetime.UTC),
         name="created_at",
     )
-
-    def __repr__(self):
-        return (
-            f"Geo(id={self.id}, cadastre_number={self.cadastre_number}, "
-            f"latitude={self.latitude}, longitude={self.longitude}, result={self.result})"
-        )

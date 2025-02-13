@@ -20,16 +20,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@router.post("/register", response_model=dict)
+@router.post("/register", response_model=dict, name="Register new user")
 async def register_user(user: UserRegister, db: AsyncSession = Depends(get_async_session)):
     """
-    Registration user.
+    Registration user. \n\n
+    Validate user credentials: \n
+        - username min length (3 characters)\n
+        - password min (8 characters, uppercase, lowercase, special characters (!@#$%^&*))
     """
     existing_user = await db.execute(User.__table__.select().where(User.username == user.username))
 
     if existing_user.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Username already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists"
+        )
 
     hashed_password = hash_password(user.password)
     new_user = User(
@@ -48,15 +53,15 @@ async def register_user(user: UserRegister, db: AsyncSession = Depends(get_async
     return {"message": "User registered successfully"}
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, name="Login user")
 async def login_user(
         user: UserLogin,
         db: AsyncSession = Depends(get_async_session)
 ):
     """
     Authorization user.
+    Please use the login-swagger endpoint for authorization in swagger.
     """
-    logger.info(f"Login user: {user}")
     access_token = await validate_user(user, db)
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -69,7 +74,6 @@ async def login_user(
     """
     Authorization user in swagger.
     """
-    logger.info(f"Login user: {user}")
     access_token = await validate_user(
         UserLogin(username=user.username, password=user.password),
         db
@@ -77,7 +81,7 @@ async def login_user(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/me", response_model=UserProfile)
+@router.get("/me", response_model=UserProfile, name="User profile(Auth only)")
 async def user_profile(user: User = Depends(get_current_user)):
     """
     Get user profile.
@@ -89,14 +93,15 @@ async def user_profile(user: User = Depends(get_current_user)):
     }
 
 
-@router.post("/change_password", response_model=dict)
+@router.post("/change_password", response_model=dict, name="Change password(Auth only)")
 async def change_password(
         data: ChangePassword,
         user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Change user password.
+    Change user password. \n\n
+     - new_password min (8 characters, uppercase, lowercase, special characters (!@#$%^&*))
     """
     if not verify_password(data.old_password, user.hashed_password):
         raise HTTPException(

@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 
-from sqlalchemy import Column, String, DateTime, Table, ForeignKey, UUID
+from sqlalchemy import String, DateTime, ForeignKey, UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from core import Base
