@@ -1,3 +1,5 @@
+import re
+
 from fastapi import Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,3 +36,13 @@ async def validate_user(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     return create_access_token(data={"sub": user.username})
+
+
+def validate_cadastre_number(cadastre_number: str) -> None:
+    """
+    Validate cadastre number.
+    :param cadastre_number: XX:XX:XXXXXXX:XXXX
+    """
+    pattern = r"^\d{2}:\d{2}:\d{6,7}:\d{1,8}$"
+    if not re.match(pattern, cadastre_number):
+        raise ValueError("Invalid cadastre number format. Expected format: XX:XX:XXXXXXX:XXXX")

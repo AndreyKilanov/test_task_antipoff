@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Annotated
 
 import httpx
@@ -7,10 +8,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.validators import validate_cadastre_number
 from auth.users import get_current_user
 from core import get_async_session
 from core.config import settings
-from models import Geo, User
+from models import Geo
 from schemas.geo_schemas import QueryResponse, QueryRequest, PingResponse
 
 logger = logging.getLogger(__name__)
@@ -21,9 +23,14 @@ router = APIRouter(prefix='')
 url_mock_server = f"http://localhost:{settings.mock_server_port}"
 
 
-@router.post('/query', response_model=QueryResponse, name="Query to mock server(Auth only)")
+@router.post(
+    '/query',
+    response_model=QueryResponse,
+    dependencies=[Depends(get_current_user)],
+    name="Query to mock server(Auth only)"
+)
 async def query(
-        query: Annotated[QueryRequest, Depends(get_current_user)],
+        query: QueryRequest,
         db: AsyncSession = Depends(get_async_session),
 ) -> QueryResponse:
     """
@@ -155,21 +162,25 @@ async def get_history(db: AsyncSession = Depends(get_async_session))-> list[Quer
 @router.get(
     "/history/{cadastre_number}",
     response_model=QueryResponse,
+    dependencies=[Depends(get_current_user)],
     name="Get history by cadastre number(Auth only)"
 )
 async def get_history_by_cadastre_number(
-        cadastre_number: Annotated[str, Depends(get_current_user)],
+        cadastre_number: str,
         db: AsyncSession = Depends(get_async_session)
 )-> QueryResponse:
     """
     Get history by cadastre number.\n
     Validate cadastre_number: \n
-        - min length (3 characters) and Expected format: XX:XX:XXXXXXX:XXXX"\n
+        - format: XX:XX:XXXXXXX:XXXX"\n
     """
     try:
 
+        validate_cadastre_number(cadastre_number)
         query = await db.execute(
-            Geo.__table__.select().where(Geo.cadastre_number == cadastre_number)
+            select(Geo)
+            .where(Geo.cadastre_number == cadastre_number)
+            .order_by(Geo.created_at.desc())
         )
 
     except SQLAlchemyError as e:
@@ -182,5 +193,12 @@ async def get_history_by_cadastre_number(
     except Exception as e:
         logger.error(f"Unexpected error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Unexpected error occurred: {str(e)}")
-
-    return query.scalars().first()
+    query = query.scalars().first()
+    return QueryResponse(
+        id=str(query.id),
+        cadastre_number=query.cadastre_number,
+        latitude=query.latitude,
+        longitude=query.longitude,
+        result=query.result,
+        created_at=query.created_at.isoformat(),
+    )
