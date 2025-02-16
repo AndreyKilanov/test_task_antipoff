@@ -25,14 +25,14 @@ class Settings:
     postgres_db: str = os.getenv('POSTGRES_DB')
     db_container_name: str = os.getenv('POSTGRES_CONTAINER_NAME')
     postgres_port: str = os.getenv('POSTGRES_PORT')
-    # database_url: str = (
-    #     f'postgresql+asyncpg://{postgres_user}:{postgres_password}@'
-    #     f'{db_container_name}:{postgres_port}/{postgres_db}'
-    # )
     database_url: str = (
         f'postgresql+asyncpg://{postgres_user}:{postgres_password}@'
-        f'localhost:{postgres_port}/{postgres_db}'
+        f'{db_container_name}:{postgres_port}/{postgres_db}'
     )
+    # database_url: str = (
+    #     f'postgresql+asyncpg://{postgres_user}:{postgres_password}@'
+    #     f'localhost:{postgres_port}/{postgres_db}'
+    # )
 
     # Users
     secret_key: str = os.getenv('SECRET_KEY')
