@@ -6,7 +6,7 @@ from sqladmin import Admin
 from starlette.middleware.cors import CORSMiddleware
 
 import core
-from admin.admin import UserAdmin, RoleAdmin
+from admin.admin import UserAdmin, RoleAdmin, GeoAdmin
 from admin.auth_admin import authentication_backend
 from api.routers import main_router
 from auth.roles import create_roles
@@ -47,3 +47,4 @@ admin = Admin(
 
 admin.add_view(UserAdmin)
 admin.add_view(RoleAdmin)
+admin.add_view(GeoAdmin)

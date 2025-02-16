@@ -1,7 +1,7 @@
 from sqladmin import ModelView
 
 from core import db_manager
-from models import User, Role
+from models import User, Role, Geo
 
 
 class CustomModelView(ModelView):
@@ -51,4 +51,29 @@ class RoleAdmin(CustomModelView, model=Role):
 
     column_labels = {
         "name": "Название",
+    }
+
+class GeoAdmin(CustomModelView, model=Geo):
+    name = "Гео запрос"
+    name_plural = "Гео запросы"
+    icon = "fa-solid fa-book"
+    can_create = False
+    can_edit = False
+    can_delete = False
+    can_view_details = True
+    column_list = ["cadastre_number", "latitude", "longitude", "result", "created_at"]
+
+    column_labels = {
+        "cadastre_number": "Кадастровый номер",
+        "latitude": "Широта",
+        "longitude": "Долгота",
+        "result": "Результат ответа сервера",
+        "created_at": "Дата запроса",
+    }
+
+    def format_created_at(self, created_at) -> str:
+        return created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+    column_formatters = {
+        "created_at": lambda m, a: UserAdmin.format_created_at(a, m.created_at),
     }
