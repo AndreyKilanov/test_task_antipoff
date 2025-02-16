@@ -24,8 +24,8 @@ class UserRegister(BaseModel):
         if not re.search(r"[a-z]", value):
             raise ValueError("Password must contain at least one lowercase letter")
 
-        if not re.search(r"[!@#$%^&*]", value):
-            raise ValueError("Password must contain at least one special character (!@#$%^&*)")
+        if not re.search(r"[!@#$%^&*_]", value):
+            raise ValueError("Password must contain at least one special character (!@#$%^&*_)")
 
         return value
 
@@ -61,8 +61,8 @@ class ChangePassword(BaseModel):
         if not re.search(r"[a-z]", value):
             raise ValueError("Password must contain at least one lowercase letter")
 
-        if not re.search(r"[!@#$%^&*]", value):
-            raise ValueError("Password must contain at least one special character (!@#$%^&*)")
+        if not re.search(r"[!@#$%^&*_]", value):
+            raise ValueError("Password must contain at least one special character (!@#$%^&*_)")
 
         return value
 

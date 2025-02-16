@@ -1,6 +1,4 @@
 import logging
-import re
-from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -36,7 +34,7 @@ async def query(
     """
     Query to mock server and save to database.\n\n
     Validate query: \n
-        - cadastre_number min length (3 characters) and Expected format: XX:XX:XXXXXXX:XXXX"\n
+        - cadastre_number Expected format: XX:XX:XXXXXXX:XXXX"\n
         - latitude max (-90, 90)\n
         - longitude max (-180, 180)\n
     """
@@ -110,15 +108,22 @@ async def ping() -> PingResponse:
     """
     Ping to mock server.
     """
-    async with httpx.AsyncClient() as client:
-
-        try:
+    try:
+        async with httpx.AsyncClient() as client:
             response = await client.get(url_mock_server + "/ping")
             return PingResponse(status=response.json().get("status"))
 
-        except httpx.HTTPStatusError as e:
-            logger.error(e.response.text)
-            raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.TimeoutException:
+        logger.error("External server timeout")
+        return PingResponse(status="Bad")
+
+    except httpx.HTTPStatusError as e:
+        logger.error(e.response.text)
+        return PingResponse(status="Bad")
+
+    except Exception as e:
+        logger.error(f"Unexpected error occurred: {str(e)}")
+        return PingResponse(status="Bad")
 
 
 @router.get(
@@ -161,27 +166,30 @@ async def get_history(db: AsyncSession = Depends(get_async_session))-> list[Quer
 
 @router.get(
     "/history/{cadastre_number}",
-    response_model=QueryResponse,
+    response_model=list[QueryResponse],
     dependencies=[Depends(get_current_user)],
     name="Get history by cadastre number(Auth only)"
 )
 async def get_history_by_cadastre_number(
         cadastre_number: str,
         db: AsyncSession = Depends(get_async_session)
-)-> QueryResponse:
+)-> list[QueryResponse]:
     """
     Get history by cadastre number.\n
     Validate cadastre_number: \n
-        - format: XX:XX:XXXXXXX:XXXX"\n
+        - Expected format: XX:XX:XXXXXXX:XXXX\n
     """
     try:
 
         validate_cadastre_number(cadastre_number)
-        query = await db.execute(
+        queries = await db.execute(
             select(Geo)
             .where(Geo.cadastre_number == cadastre_number)
             .order_by(Geo.created_at.desc())
         )
+
+        if not queries:
+            raise HTTPException(status_code=404, detail="Query not found")
 
     except SQLAlchemyError as e:
         logger.error(f"An unexpected error occurred while loading the data: {str(e)}")
@@ -190,15 +198,14 @@ async def get_history_by_cadastre_number(
             detail=f"An unexpected error occurred while loading the data: {str(e)}"
         )
 
-    except Exception as e:
-        logger.error(f"Unexpected error occurred: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Unexpected error occurred: {str(e)}")
-    query = query.scalars().first()
-    return QueryResponse(
-        id=str(query.id),
-        cadastre_number=query.cadastre_number,
-        latitude=query.latitude,
-        longitude=query.longitude,
-        result=query.result,
-        created_at=query.created_at.isoformat(),
-    )
+    return [
+        QueryResponse(
+            id=str(q.id),
+            cadastre_number=q.cadastre_number,
+            latitude=q.latitude,
+            longitude=q.longitude,
+            result=q.result,
+            created_at=q.created_at.isoformat(), # noqa
+        )
+        for q in queries.scalars()
+    ]

@@ -26,7 +26,7 @@ async def register_user(user: UserRegister, db: AsyncSession = Depends(get_async
     Registration user. \n\n
     Validate user credentials: \n
         - username min length (3 characters)\n
-        - password min (8 characters, uppercase, lowercase, special characters (!@#$%^&*))
+        - password min (8 characters, uppercase, lowercase, special characters (!@#$%^&*_))
     """
     existing_user = await db.execute(User.__table__.select().where(User.username == user.username))
 
@@ -101,7 +101,7 @@ async def change_password(
 ):
     """
     Change user password. \n\n
-     - new_password min (8 characters, uppercase, lowercase, special characters (!@#$%^&*))
+        - new_password min (8 characters, uppercase, lowercase, special characters (!@#$%^&*_))
     """
     if not verify_password(data.old_password, user.hashed_password):
         raise HTTPException(

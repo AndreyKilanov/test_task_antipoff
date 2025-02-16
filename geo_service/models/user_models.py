@@ -1,5 +1,4 @@
 import datetime
-from typing import List
 
 from sqlalchemy import String, DateTime, ForeignKey, UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -11,7 +10,14 @@ class Role(Base):
     __tablename__ = "roles"
 
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    users: Mapped[List["User"]] = relationship("User", back_populates="role")
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="role",
+        lazy="selectin"
+    )
+
+    def __repr__(self):
+        return self.name
 
 
 class User(Base):
@@ -25,3 +31,7 @@ class User(Base):
     )
     role_id: Mapped[UUID] = mapped_column(ForeignKey("roles.id"), nullable=False)
     role: Mapped["Role"] = relationship("Role", back_populates="users", lazy="selectin")
+
+
+    def __repr__(self):
+        return self.username
