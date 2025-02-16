@@ -65,7 +65,7 @@ git clone git@github.com:AndreyKilanov/test_task_antipoff.git
 ```
   
 
-- Запустите контейнера командой:
+- Запустите контейнеры командой:
 ```bash
 docker-compose up -d --build
 ```
