@@ -15,10 +15,9 @@ from schemas.geo_schemas import QueryResponse, QueryRequest, PingResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix='')
+router = APIRouter()
 
-# url_mock_server = f"http://{settings.mock_server_host}:{settings.mock_server_port}"
-url_mock_server = f"http://localhost:{settings.mock_server_port}"
+url_mock_server = f"http://{settings.mock_server_host}:{settings.mock_server_port}"
 
 
 @router.post(
